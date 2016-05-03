@@ -1,36 +1,28 @@
 # moodtrackr
 
-FIXME: description
+Keep track of the moods around you in real time!
 
 ## Installation
 
-Download from http://example.com/FIXME.
+FIXME:
+Nothing yet -- Sample data fetching to be implemented in Clojure then later processed using an Ardurino using C/C++
 
 ## Usage
 
-FIXME: explanation
+### Clojure ###
+Built upon Leinigen:
 
-    $ java -jar moodtrackr-0.1.0-standalone.jar [args]
+	$ lein --version
+	Leiningen 2.6.1 on Java 1.8.0_60 Java HotSpot(TM) 64-Bit Server VM
+	
+Dependencies -- see project.clj
 
-## Options
+## Options ##
 
 FIXME: listing of options this app accepts.
 
 ## Examples
 
-...
 
 ### Bugs
 
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2016 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
