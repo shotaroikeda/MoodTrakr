@@ -1,19 +1,29 @@
 (ns moodtrackr.core
-  (:gen-class))
+  (:require [http.async.client :as http]))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
 
-(def application-constants
-  {:port 8099
-   :service "http://localhost"})
+(def ps-base-url
+  "https://stream.twitter.com/1.1/statuses/filter.json")
+(def ps-params
+  {:locations "-122.75,36.8,-121.75,37.8"})
 
-(def twitter-oauth-permissions
-  {:consumer-key  "MY6CSHxk7cfXahiX16M96cBIT"
-   :consumer-secret "T0UiZC9uvoKL5Jag1lPK1L8XVSj5b9C4KYtX0IOJFZcqCBH4TO"
-   :client-access-token "3100780247-sdiqtUMDZorEXHjD1q57wUUkelYnuWCnRhoq7gQ"
-   :client-access-token-secret "VNRYhs3W3EfHux2KFTufyuhYEzoPAIiJWo8f5tygU1M82"})
+(defn gen-twitter-url
+  "Generates a Twitter API url for the given params."
+  [base params]
+  (str base "?" (clojure.string/join "&" (map (fn [[k v _]] (str (name k) "=" v)) params))))
 
-(defn generate-callback-url [] (str (:service application-constants) ":" (:port application-constants) "/"))
+;; Plumbing for http.async
+(defn reponse-handler [res]
+  (print res))
+
+(defn post-test [url]
+  (println "Connecting...")
+  (with-open [client (http/create-client)]
+    (let [response (http/POST client url)]
+      (-> response
+          http/await))))
+
