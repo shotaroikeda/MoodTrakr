@@ -13,3 +13,5 @@ pom.xml.asc
 .projectile
 .DS_Store
 .#*
+
+twitter_sentiment_data/*
