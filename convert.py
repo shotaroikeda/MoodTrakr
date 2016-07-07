@@ -26,7 +26,7 @@ def process_df(global_df, fname, start, end, div):
         df = convert_data(global_df[start:start+div])
         f = directory + fname + '.%d.%d.hdf' % (part, len(df))
         print(Color.yellow('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
-        df.to_hdf(f, fname)
+        df.to_csv(path_or_buf=f, encoding='utf-8')
         # Post
         part+=1
         start+=div
@@ -115,7 +115,7 @@ def main():
     new_testing  = convert_data(test_data)
 
     # Save to disk
-    new_testing.to_hdf('twitter_sentiment_data/testing_data.hdf', 'testing')
+    new_testing.to_csv(path_or_buf='twitter_sentiment_data/testing_data.hdf', encoding='utf-8')
 
     for t in threads:
         t.join()
