@@ -4,7 +4,8 @@ import collections
 import copy
 import re
 import ansiterm as Color
-import threading
+from multiprocessing import Process
+import os
 
 #######################
 # COMMONLY USED REGEX #
@@ -15,18 +16,18 @@ palette = [Color.red, Color.green, Color.yellow, Color.light_purple, Color.purpl
 
 def process_df(global_df, fname, start, end, div, color):
     # Function that gets run per thread
-    print(color("Thread-%d: Processing %d to %d with %d" % (threading.get_ident(), start, end, div)))
+    print(color("PID-%d: Processing %d to %d with %d" % (os.getpid(), start, end, div)))
     # Loop data sets to create smaller datasets
     directory = 'twitter_sentiment_data/'
 
     part = (start // div) + 1
-    print(color('Thread-%d: Starting with part %d') % (threading.get_ident(), part))
+    print(color('PID-%d: Starting with part %d') % (os.getpid(), part))
     while end > start:
-        print(color('Thread-%d: Converting data set items %d~%d' %
-                    (threading.get_ident(), start, start+div)))
+        print(color('PID-%d: Converting data set items %d~%d' %
+                    (os.getpid(), start, start+div)))
         df = convert_data(global_df[start:start+div], color)
         f = directory + 'fname + .%04d.%04d.csv' % (part, len(df))
-        print(color('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
+        print(color('PID-%d: Saving dataset %s') % (os.getpid(), f))
         df.to_csv(path_or_buf=f, encoding='utf-8')
         # Post
         part+=1
@@ -40,25 +41,25 @@ def formatted_tweet(tweet):
 def convert_data(df, color):
     lower = np.vectorize(lambda x: x.lower()) # Vectorized function to capitalize string
 
-    print(color("Thread-%d: Searching for all words in database" % (threading.get_ident())))
+    print(color("PID-%d: Searching for all words in database" % (os.getpid())))
     words       = set([word for tweet in lower(df['text'])
                        for word in formatted_tweet(tweet)])       # Obtain all words
 
     # Construct headers to be used, along with a map of the word to the index
-    print(color("Thread-%d: Creating new headers and processing structure" % (threading.get_ident())))
+    print(color("PID-%d: Creating new headers and processing structure" % (os.getpid())))
     new_headers = list(words)
     new_headers.append('POLARITY')
     mapper = {k: n for n, k in enumerate(new_headers)} # Map word to index
-    print(color("Thread-%d: Detected %d headers" % (threading.get_ident(), len(new_headers))))
+    print(color("PID-%d: Detected %d headers" % (os.getpid(), len(new_headers))))
 
     # Preallocate memory for the amount of data required
-    print(color("Thread-%d: Preallocating memory for dataframe" % (threading.get_ident())))
+    print(color("PID-%d: Preallocating memory for dataframe" % (os.getpid())))
     new_dataframe = pd.DataFrame(index=np.arange(0, len(df)), columns=new_headers)
-    print(color("Thread-%d: Processing data..." % (threading.get_ident())))
+    print(color("PID-%d: Processing data..." % (os.getpid())))
     for n, data in enumerate(zip(lower(df['text']), df['polarity'])):
         tweet, polarity = data
         if n % 100 == 0:
-            print(color("Thread-%d: %10.2f%% done." % (threading.get_ident(), (n / len(df['text'])) * 100)))
+            print(color("PID-%d: %10.2f%% done." % (os.getpid(), (n / len(df['text'])) * 100)))
 
         # Generate zeros
         new_frame = np.zeros(len(new_headers))
@@ -89,15 +90,14 @@ def main():
     # Shuffle the training data since all the values are aligned
     training_data = training_data.iloc[np.random.permutation(len(training_data))]
     training_data = training_data.reset_index(drop=True)
-    print(training_data)
 
-    # test_data = pd.pandas.read_csv(testing_dir,
-    #                                names=row_headers,
-    #                                usecols=[0, 4, 5], encoding='ISO-8859-1')
+    test_data = pd.pandas.read_csv(testing_dir,
+                                   names=row_headers,
+                                   usecols=[0, 4, 5], encoding='ISO-8859-1')
 
     # Convert data
     print("Converting training data")
-    threads = []
+    processes = []
 
     start = 0
     end = len(training_data)
@@ -107,25 +107,25 @@ def main():
         proc = end // 4
         if i == 3:
             args = (training_data, 'training_data', start, end, div, palette[i])
-            thread = threading.Thread(target=process_df, args=args)
-            threads.append(thread)
+            process = Process(target=process_df, args=args)
+            processes.append(thread)
         else:
             args = (training_data, 'training_data', start, start+proc, div, palette[i])
-            thread = threading.Thread(target=process_df, args=args)
-            threads.append(thread)
+            process = Process(target=process_df, args=args)
+            processes.append(thread)
 
-        threads[i].start()
+        processes[i].start()
         start += proc
 
     print("Converting testing data")
     # Training data is already taken care of
-    # new_testing  = convert_data(test_data)
+    new_testing  = convert_data(test_data)
 
-    # # Save to disk
-    # new_testing.to_csv(path_or_buf='twitter_sentiment_data/testing_data.hdf', encoding='utf-8')
+    # Save to disk
+    new_testing.to_csv(path_or_buf='twitter_sentiment_data/testing_data.csv', encoding='utf-8')
 
-    for t in threads:
-        t.join()
+    for p in processes:
+        p.join()
 
     print("Finished Converting Test Data")
 
