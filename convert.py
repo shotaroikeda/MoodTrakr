@@ -13,8 +13,7 @@ user_regex = re.compile('@\w+')
 url_regex = re.compile('(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})')
 palette = [Color.red, Color.green, Color.yellow, Color.light_purple, Color.purple, Color.cyan, Color.light_gray, Color.black]
 
-def process_df(global_df, fname, start, end, div):
-    color = palette[threading.get_ident() % len(palette)]
+def process_df(global_df, fname, start, end, div, color):
     # Function that gets run per thread
     print(color("Thread-%d: Processing %d to %d with %d" % (threading.get_ident(), start, end, div)))
     # Loop data sets to create smaller datasets
@@ -25,7 +24,7 @@ def process_df(global_df, fname, start, end, div):
     while end > start:
         print(color('Thread-%d: Converting data set items %d~%d' %
                     (threading.get_ident(), start, start+div)))
-        df = convert_data(global_df[start:start+div])
+        df = convert_data(global_df[start:start+div], color)
         f = directory + fname + '.%d.%d.hdf' % (part, len(df))
         print(color('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
         df.to_csv(path_or_buf=f, encoding='utf-8')
@@ -38,8 +37,7 @@ def formatted_tweet(tweet):
     return url_regex.sub('URL', user_regex.sub('USER', tweet)).split()
 
 
-def convert_data(df):
-    color = palette[threading.get_ident() % len(palette)]
+def convert_data(df, color):
     lower = np.vectorize(lambda x: x.lower()) # Vectorized function to capitalize string
 
     print(color("Thread-%d: Searching for all words in database" % (threading.get_ident())))
@@ -108,11 +106,11 @@ def main():
     for i in range(4):
         proc = end // 4
         if i == 3:
-            args = (training_data, 'training_data', start, end, div)
+            args = (training_data, 'training_data', start, end, div, palette[i])
             thread = threading.Thread(target=process_df, args=args)
             threads.append(thread)
         else:
-            args = (training_data, 'training_data', start, start+proc, div)
+            args = (training_data, 'training_data', start, start+proc, div, palette[i])
             thread = threading.Thread(target=process_df, args=args)
             threads.append(thread)
 
