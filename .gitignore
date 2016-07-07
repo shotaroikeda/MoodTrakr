@@ -15,3 +15,5 @@ pom.xml.asc
 .#*
 
 twitter_sentiment_data/*
+__pycache__
+*.png
