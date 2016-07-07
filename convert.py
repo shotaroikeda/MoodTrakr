@@ -26,7 +26,7 @@ def process_df(global_df, fname, start, end, div, color):
         print(color('PID-%d: Converting data set items %d~%d' %
                     (os.getpid(), start, start+div)))
         df = convert_data(global_df[start:start+div], color)
-        f = directory + 'fname + .%04d.%04d.csv' % (part, len(df))
+        f = directory + fname + '.%04d.%04d.csv' % (part, len(df))
         print(color('PID-%d: Saving dataset %s') % (os.getpid(), f))
         df.to_csv(path_or_buf=f, encoding='utf-8')
         # Post
