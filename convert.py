@@ -89,7 +89,7 @@ def main():
 
     print("Shuffling data")
     # Shuffle the training data since all the values are aligned
-    training_data = training_data[np.random.permutation(len(training_data))]
+    training_data = training_data.iloc[np.random.permutation(len(training_data))]
     training_data.reset_index(drop=True)
     print(training_data)
 
