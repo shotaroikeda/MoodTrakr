@@ -18,11 +18,11 @@ def process_df(global_df, fname, start, end, div):
     # Loop data sets to create smaller datasets
     directory = 'twitter_sentiment_data/'
 
-    part = (start // (len(global_df) // 4)) + 1
+    part = (start // div) + 1
     print(Color.yellow('Thread-%d: Starting with part %d') % (threading.get_ident(), part))
     while end > start:
         print(Color.yellow('Thread-%d: Converting data set items %d~%d' %
-                           (threading.get_ident(), n, n+div)))
+                           (threading.get_ident(), start, start+div)))
         df = convert_data(global_df[n:n+div])
         f = directory + fname + '.%d.%d.hdf' % (part, len(df))
         print(Color.yellow('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
