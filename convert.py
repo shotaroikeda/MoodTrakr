@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import collections
 import copy
+import re
 
 #######################
 # COMMONLY USED REGEX #
