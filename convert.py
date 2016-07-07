@@ -108,18 +108,18 @@ def main():
         if i == 3:
             args = (training_data, 'training_data', start, end, div, palette[i])
             process = Process(target=process_df, args=args)
-            processes.append(thread)
+            processes.append(process)
         else:
             args = (training_data, 'training_data', start, start+proc, div, palette[i])
             process = Process(target=process_df, args=args)
-            processes.append(thread)
+            processes.append(process)
 
         processes[i].start()
         start += proc
 
     print("Converting testing data")
     # Training data is already taken care of
-    new_testing  = convert_data(test_data)
+    new_testing = convert_data(test_data)
 
     # Save to disk
     new_testing.to_csv(path_or_buf='twitter_sentiment_data/testing_data.csv', encoding='utf-8')
