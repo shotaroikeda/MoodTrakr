@@ -3,6 +3,8 @@ import numpy as np
 import collections
 import copy
 import re
+import ansiterm as Color
+import threading
 
 #######################
 # COMMONLY USED REGEX #
@@ -10,8 +12,29 @@ import re
 user_regex = re.compile('@\w+')
 url_regex = re.compile('(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})')
 
+def process_df(global_df, fname, start, end, div):
+    # Function that gets run per thread
+    print(Color.red("Thread-%d: Processing %d to %d with %d" % (threading.get_ident(), start, end, div)))
+    # Loop data sets to create smaller datasets
+    directory = 'twitter_sentiment_data/'
+
+    part = (start // (len(global_df) // 4)) + 1
+    print(Color.yellow('Thread-%d: Starting with part %d') % (threading.get_ident(), part))
+    while end > start:
+        print(Color.yellow('Thread-%d: Converting data set items %d~%d' %
+                           (threading.get_ident(), n, n+div)))
+        df = convert_data(global_df[n:n+div])
+        f = directory + fname + '.%d.%d.hdf' % (part, len(df))
+        print(Color.yellow('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
+        df.to_hdf(f, fname)
+        # Post
+        part+=1
+        start+=div
+    
+
 def formatted_tweet(tweet):
     return url_regex.sub('URL', user_regex.sub('USER', tweet)).split()
+
 
 def convert_data(df):
     lower = np.vectorize(lambda x: x.lower()) # Vectorized function to capitalize string
@@ -44,9 +67,10 @@ def convert_data(df):
             new_frame[mapper[word]] += 1
 
         # Done with counting words
-        df.iloc[n] = new_frame # add to dataframe
+        new_dataframe.iloc[n] = new_frame # add to dataframe
 
     return new_dataframe
+
 
 def main():
     # Preprocessing data
@@ -67,13 +91,36 @@ def main():
     print("Converting data")
     # Convert data
     print("Converting training data")
-    new_training = convert_data(training_data)
+    threads = []
+
+    start = 0
+    end = len(training_data)
+    div = 1000
+
+    for i in range(4):
+        proc = end // 4
+        if i == 3:
+            args = (training_data, 'training_data', start, end, div)
+            thread = threading.Thread(target=process_df, args=args)
+            threads.append(thread)
+        else:
+            args = (training_data, 'training_data', start, start+proc, div)
+            thread = threading.Thread(target=process_df, args=args)
+            threads.append(thread)
+
+        threads[i].start()
+        start += proc
+
     print("Converting testing data")
     new_testing  = convert_data(test_data)
 
     # Save to disk
-    new_training.to_hdf('twitter_sentiment_data/training_data.hdf', 'training')
     new_testing.to_hdf('twitter_sentiment_data/testing_data.hdf', 'testing')
+
+    for t in threads:
+        t.join()
+
+    print("Finished Converting Test Data")
 
 
 if __name__ == '__main__':
