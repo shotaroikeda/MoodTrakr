@@ -3,28 +3,42 @@ import numpy as np
 import collections
 import copy
 
-def convert_data(df):
-    capital     = np.vectorize(lambda x: x.upper()) # Vectorized function to capitalize string
-    print("Searching for all words in database")
-    words       = [word for tweet in capital(df['text'])
-                   for word in tweet.split()]       # Obtain all words
-    print("Creating new headers and processing structure")
-    new_headers = list(set(words))                  # this is going to be the new headers that will be used
-    zeros = [0 for i in new_headers]
-    zeroed_dict = collections.OrderedDict(zip(new_headers, zeros))
-    zeroed_dict.update({'polarity': 0})
+#######################
+# COMMONLY USED REGEX #
+#######################
+user_regex = re.compile('@\w+')
+url_regex = re.compile('(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})')
 
-    new_dataframe = pd.DataFrame([], columns=new_headers + ['polarity'])
-    for n, tweet, polarity in enumerate(zip(capital(df['text']), df['polarity'])):
+def formatted_tweet(tweet):
+    return url_regex.sub('URL', user_regex.sub('USER', tweet)).split()
+
+def convert_data(df):
+    lower = np.vectorize(lambda x: x.lower()) # Vectorized function to capitalize string
+    print("Searching for all words in database")
+    words       = set([word for tweet in lower(df['text'])
+                       for word in formatted_tweet(tweet)])       # Obtain all words
+
+    print("Creating new headers and processing structure")
+    # Construct headers to be used, along with a map of the word to the index
+    new_headers = list(words)
+    new_headers.append('POLARITY')
+    mapper = {k: n for n, k in enumerate(new_headers)} # Map word to index
+    print("Detected %d headers" % (len(new_headers)))
+
+    new_dataframe = pd.DataFrame([], columns=new_headers)
+    for n, tweet, polarity in enumerate(zip(lower(df['text']), df['polarity'])):
         if n % 100 == 0:
             print("Processing %d th element" % (n))
-        frame = copy.deepcopy(zeroed_dict)
-        frame['polarity'] = polarity
-        for word in tweet.split():
-            frame[word] += 1
+
+        # Generate zeros
+        new_frame = np.zeros(len(new_headers))
+        new_frame[mapper['POLARITY']] = polarity
+
+        for word in formatted_tweet(tweet):
+            new_frame[mapper(word)] += 1
 
         # Done with counting words
-        new_dataframe = new_dataframe.append(frame, ignore_index=True)
+        new_dataframe = new_dataframe.append(new_frame, ignore_index=True)
 
     return new_dataframe
 
