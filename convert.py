@@ -15,18 +15,22 @@ def formatted_tweet(tweet):
 
 def convert_data(df):
     lower = np.vectorize(lambda x: x.lower()) # Vectorized function to capitalize string
+
     print("Searching for all words in database")
     words       = set([word for tweet in lower(df['text'])
                        for word in formatted_tweet(tweet)])       # Obtain all words
 
-    print("Creating new headers and processing structure")
     # Construct headers to be used, along with a map of the word to the index
+    print("Creating new headers and processing structure")
     new_headers = list(words)
     new_headers.append('POLARITY')
     mapper = {k: n for n, k in enumerate(new_headers)} # Map word to index
     print("Detected %d headers" % (len(new_headers)))
 
-    new_dataframe = pd.DataFrame([], columns=new_headers)
+    # Preallocate memory for the amount of data required
+    print("Preallocating memory for dataframe")
+    new_dataframe = pd.DataFrame(index=np.arange(0, len(df)), columns=new_headers)
+    print("Processing data...")
     for n, data in enumerate(zip(lower(df['text']), df['polarity'])):
         tweet, polarity = data
         if n % 100 == 0:
@@ -40,7 +44,7 @@ def convert_data(df):
             new_frame[mapper[word]] += 1
 
         # Done with counting words
-        new_dataframe = new_dataframe.append(new_frame, ignore_index=True)
+        df.iloc[n] = new_frame # add to dataframe
 
     return new_dataframe
 
