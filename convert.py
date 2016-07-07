@@ -27,7 +27,8 @@ def convert_data(df):
     print("Detected %d headers" % (len(new_headers)))
 
     new_dataframe = pd.DataFrame([], columns=new_headers)
-    for n, tweet, polarity in enumerate(zip(lower(df['text']), df['polarity'])):
+    for n, data in enumerate(zip(lower(df['text']), df['polarity'])):
+        tweet, polarity = data
         if n % 100 == 0:
             print("Processing %d th element" % (n))
 
