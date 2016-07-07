@@ -25,7 +25,7 @@ def process_df(global_df, fname, start, end, div, color):
         print(color('Thread-%d: Converting data set items %d~%d' %
                     (threading.get_ident(), start, start+div)))
         df = convert_data(global_df[start:start+div], color)
-        f = directory + fname + '.%d.%d.hdf' % (part, len(df))
+        f = directory + 'fname + .%04d.%04d.hdf' % (part, len(df))
         print(color('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
         df.to_csv(path_or_buf=f, encoding='utf-8')
         # Post
