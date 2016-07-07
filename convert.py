@@ -11,21 +11,23 @@ import threading
 #######################
 user_regex = re.compile('@\w+')
 url_regex = re.compile('(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})')
+palette = [Color.red, Color.green, Color.yellow, Color.light_purple, Color.purple, Color.cyan, Color.light_gray, Color.black]
 
 def process_df(global_df, fname, start, end, div):
+    color = palette[threading.get_ident() % len(palette)]
     # Function that gets run per thread
-    print(Color.red("Thread-%d: Processing %d to %d with %d" % (threading.get_ident(), start, end, div)))
+    print(color("Thread-%d: Processing %d to %d with %d" % (threading.get_ident(), start, end, div)))
     # Loop data sets to create smaller datasets
     directory = 'twitter_sentiment_data/'
 
     part = (start // div) + 1
-    print(Color.yellow('Thread-%d: Starting with part %d') % (threading.get_ident(), part))
+    print(color('Thread-%d: Starting with part %d') % (threading.get_ident(), part))
     while end > start:
-        print(Color.yellow('Thread-%d: Converting data set items %d~%d' %
-                           (threading.get_ident(), start, start+div)))
+        print(color('Thread-%d: Converting data set items %d~%d' %
+                    (threading.get_ident(), start, start+div)))
         df = convert_data(global_df[start:start+div])
         f = directory + fname + '.%d.%d.hdf' % (part, len(df))
-        print(Color.yellow('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
+        print(color('Thread-%d: Saving dataset %s') % (threading.get_ident(), f))
         df.to_csv(path_or_buf=f, encoding='utf-8')
         # Post
         part+=1
@@ -37,27 +39,28 @@ def formatted_tweet(tweet):
 
 
 def convert_data(df):
+    color = palette[threading.get_ident() % len(palette)]
     lower = np.vectorize(lambda x: x.lower()) # Vectorized function to capitalize string
 
-    print("Searching for all words in database")
+    print(color("Thread-%d: Searching for all words in database" % (threading.get_ident())))
     words       = set([word for tweet in lower(df['text'])
                        for word in formatted_tweet(tweet)])       # Obtain all words
 
     # Construct headers to be used, along with a map of the word to the index
-    print("Creating new headers and processing structure")
+    print(color("Thread-%d: Creating new headers and processing structure" % (threading.get_ident())))
     new_headers = list(words)
     new_headers.append('POLARITY')
     mapper = {k: n for n, k in enumerate(new_headers)} # Map word to index
-    print("Detected %d headers" % (len(new_headers)))
+    print(color("Thread-%d: Detected %d headers" % (threading.get_ident(), len(new_headers))))
 
     # Preallocate memory for the amount of data required
-    print("Preallocating memory for dataframe")
+    print(color("Thread-%d: Preallocating memory for dataframe" % (threading.get_ident())))
     new_dataframe = pd.DataFrame(index=np.arange(0, len(df)), columns=new_headers)
-    print("Processing data...")
+    print(color("Thread-%d: Processing data..." % (threading.get_ident())))
     for n, data in enumerate(zip(lower(df['text']), df['polarity'])):
         tweet, polarity = data
         if n % 100 == 0:
-            print("Processing %d th element" % (n))
+            print(color("Thread-%d: %10.2f\% done." % (threading.get_ident(), n / len(tweet) * 100)))
 
         # Generate zeros
         new_frame = np.zeros(len(new_headers))
@@ -84,11 +87,16 @@ def main():
                                        names=row_headers,
                                        usecols=[0, 4, 5], encoding='ISO-8859-1')
 
-    test_data = pd.pandas.read_csv(testing_dir,
-                                   names=row_headers,
-                                   usecols=[0, 4, 5], encoding='ISO-8859-1')
+    print("Shuffling data")
+    # Shuffle the training data since all the values are aligned
+    training_data = training_data[np.random.permutation(len(training_data))]
+    training_data.reset_index(drop=True)
+    print(training_data)
 
-    print("Converting data")
+    # test_data = pd.pandas.read_csv(testing_dir,
+    #                                names=row_headers,
+    #                                usecols=[0, 4, 5], encoding='ISO-8859-1')
+
     # Convert data
     print("Converting training data")
     threads = []
@@ -112,10 +120,11 @@ def main():
         start += proc
 
     print("Converting testing data")
-    new_testing  = convert_data(test_data)
+    # Training data is already taken care of
+    # new_testing  = convert_data(test_data)
 
-    # Save to disk
-    new_testing.to_csv(path_or_buf='twitter_sentiment_data/testing_data.hdf', encoding='utf-8')
+    # # Save to disk
+    # new_testing.to_csv(path_or_buf='twitter_sentiment_data/testing_data.hdf', encoding='utf-8')
 
     for t in threads:
         t.join()
