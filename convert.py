@@ -58,7 +58,7 @@ def convert_data(df, color):
     for n, data in enumerate(zip(lower(df['text']), df['polarity'])):
         tweet, polarity = data
         if n % 100 == 0:
-            print(color("Thread-%d: %10.2f%% done." % (threading.get_ident(), n / len(tweet) * 100)))
+            print(color("Thread-%d: %10.2f%% done." % (threading.get_ident(), (n / len(df['text'])) * 100)))
 
         # Generate zeros
         new_frame = np.zeros(len(new_headers))
