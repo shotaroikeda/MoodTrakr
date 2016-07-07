@@ -6,6 +6,7 @@ import re
 import ansiterm as Color
 from multiprocessing import Process
 import os
+import gc
 
 #######################
 # COMMONLY USED REGEX #
@@ -23,6 +24,8 @@ def process_df(global_df, fname, start, end, div, color):
     part = (start // div) + 1
     print(color('PID-%d: Starting with part %d') % (os.getpid(), part))
     while end > start:
+        print(color('-- PID-%d: Garbage Collection --') % (os.getpid()))
+        gc.collect() # Garbage collect before continuing
         print(color('PID-%d: Converting data set items %d~%d' %
                     (os.getpid(), start, start+div)))
         df = convert_data(global_df[start:start+div], color)
@@ -53,7 +56,7 @@ def convert_data(df, color):
     print(color("PID-%d: Detected %d headers" % (os.getpid(), len(new_headers))))
 
     # Preallocate memory for the amount of data required
-    print(color("PID-%d: Preallocating memory for dataframe" % (os.getpid())))
+    print(color("-- PID-%d: Preallocating memory for dataframe --" % (os.getpid())))
     new_dataframe = pd.DataFrame(index=np.arange(0, len(df)), columns=new_headers)
     print(color("PID-%d: Processing data..." % (os.getpid())))
     for n, data in enumerate(zip(lower(df['text']), df['polarity'])):
