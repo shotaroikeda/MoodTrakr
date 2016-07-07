@@ -37,7 +37,7 @@ def convert_data(df):
         new_frame[mapper['POLARITY']] = polarity
 
         for word in formatted_tweet(tweet):
-            new_frame[mapper(word)] += 1
+            new_frame[mapper[word]] += 1
 
         # Done with counting words
         new_dataframe = new_dataframe.append(new_frame, ignore_index=True)
